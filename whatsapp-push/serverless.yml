@@ -1,0 +1,55 @@
+service: whatsapp-push
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  iam:
+    role:
+      statements:
+      - Effect: "Allow"
+        Action:
+          - "states:ListStateMachines"
+          - "states:StartExecution"
+        Resource: "arn:aws:states:*:*:*"
+      - Effect: "Allow"
+        Action:
+          - "dynamodb:Scan"
+          - "dynamodb:DescribeTable"
+          - "dynamodb:Query"
+          - "dynamodb:GetItem"
+          - "dynamodb:PutItem"
+          - "dynamodb:UpdateItem"
+          - "dynamodb:DeleteItem"
+        Resource: "arn:aws:dynamodb:*:*:table/templates"
+
+functions:
+  CreateTemplates:
+    handler: handlers/template.CreateTemplates
+    events:
+      - http:
+          path: templates
+          method: post
+          cors: true
+
+
+resources:
+  Resources:
+    TemplatesTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: "user_id"
+            AttributeType: "S"
+          - AttributeName: "template_id"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "user_id"
+            KeyType: "HASH"
+          - AttributeName: "template_id"
+            KeyType: "RANGE"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: templates
